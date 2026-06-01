@@ -100,6 +100,19 @@ def fetch_farmacias() -> pd.DataFrame:
         return pd.read_sql_query("SELECT * FROM farmacias ORDER BY score_comercial DESC, nombre", conn)
 
 
+def count_farmacias() -> int:
+    init_db()
+    with get_connection() as conn:
+        return int(conn.execute("SELECT COUNT(*) FROM farmacias").fetchone()[0])
+
+
+def reset_database() -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if DB_PATH.exists():
+        DB_PATH.unlink()
+    init_db()
+
+
 def upsert_farmacias(df: pd.DataFrame) -> int:
     if df.empty:
         return 0

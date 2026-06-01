@@ -4,13 +4,13 @@ import pandas as pd
 import streamlit as st
 
 from modules.analytics import count_by, pipeline_summary, proximas_acciones, ranking_prioritarias
-from modules.database import DB_PATH, fetch_farmacias, init_db, update_farmacia_fields, upsert_farmacias
-from modules.importer import REQUIRED_COLUMNS, load_farmacias_excel
+from modules.database import DB_PATH, count_farmacias, fetch_farmacias, init_db, reset_database, update_farmacia_fields, upsert_farmacias
+from modules.importer import MASTER_SHEET_NAME, REQUIRED_COLUMNS, load_farmacias_excel
 from modules.scoring import ESTADOS_COMERCIALES, aplicar_scoring, recomendar_accion
 
 
 DATA_DIR = Path(__file__).parent / "data"
-EXAMPLE_XLSX = DATA_DIR / "farmacias_master.xlsx"
+MASTER_XLSX = DATA_DIR / "farmacias_master.xlsx"
 
 st.set_page_config(page_title="CRM Farmacias", layout="wide")
 
@@ -24,29 +24,91 @@ def refresh_data() -> None:
     load_data.clear()
 
 
-def import_excel_view() -> None:
+def import_master_excel(reset_before_import: bool = False) -> dict[str, object]:
+    debug = {
+        "excel_path": str(MASTER_XLSX.resolve()),
+        "excel_exists": MASTER_XLSX.exists(),
+        "sheet_name": MASTER_SHEET_NAME,
+        "detected_columns": [],
+        "excel_rows": 0,
+        "rows_with_content": 0,
+        "sqlite_total": count_farmacias(),
+        "message": "",
+    }
+
+    if not MASTER_XLSX.exists():
+        debug["message"] = "No se encontró data/farmacias_master.xlsx. Sube tu Excel real."
+        return debug
+
+    try:
+        if reset_before_import:
+            reset_database()
+
+        df, import_debug = load_farmacias_excel(MASTER_XLSX)
+        upsert_farmacias(df)
+        refresh_data()
+        debug.update(import_debug)
+        debug["sqlite_total"] = count_farmacias()
+        debug["message"] = f"Importadas o actualizadas {len(df)} farmacias desde el Excel real."
+    except ValueError as exc:
+        debug["message"] = str(exc)
+    except Exception as exc:
+        debug["message"] = f"No se pudo importar la hoja {MASTER_SHEET_NAME}: {exc}"
+
+    return debug
+
+
+def debug_view(debug: dict[str, object]) -> None:
+    st.subheader("Depuración de importación")
+    st.write(
+        {
+            "ruta_excel_usado": debug.get("excel_path", str(MASTER_XLSX.resolve())),
+            "archivo_existe": debug.get("excel_exists", MASTER_XLSX.exists()),
+            "hoja_leida": debug.get("sheet_name", MASTER_SHEET_NAME),
+            "columnas_detectadas": debug.get("detected_columns", []),
+            "filas_leidas_excel": debug.get("excel_rows", 0),
+            "total_farmacias_sqlite": debug.get("sqlite_total", count_farmacias()),
+        }
+    )
+    if debug.get("message"):
+        st.info(str(debug["message"]))
+
+
+def import_excel_view(debug: dict[str, object]) -> None:
     st.subheader("Importar Excel maestro")
     st.caption(f"Persistencia SQLite: {DB_PATH}")
+    st.caption(f"Archivo principal: {MASTER_XLSX}")
+    st.caption(f"Hoja obligatoria: {MASTER_SHEET_NAME}")
     st.write(f"Columnas obligatorias: {', '.join(REQUIRED_COLUMNS)}")
 
-    uploaded_file = st.file_uploader("Excel de farmacias", type=["xlsx", "xls"])
-    use_example = st.checkbox("Usar Excel de ejemplo", value=EXAMPLE_XLSX.exists())
+    if not MASTER_XLSX.exists():
+        st.warning("No se encontró data/farmacias_master.xlsx. Sube tu Excel real.")
 
-    if st.button("Importar o actualizar", type="primary"):
-        source = EXAMPLE_XLSX if use_example and EXAMPLE_XLSX.exists() else uploaded_file
-        if source is None:
-            st.warning("Sube un Excel o usa el archivo de ejemplo.")
-            return
+    uploaded_file = st.file_uploader("Subir Excel real como data/farmacias_master.xlsx", type=["xlsx", "xls"])
+    if uploaded_file is not None:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        MASTER_XLSX.write_bytes(uploaded_file.getbuffer())
+        st.success("Excel real guardado en data/farmacias_master.xlsx.")
 
-        try:
-            df = load_farmacias_excel(source)
-        except ValueError as exc:
-            st.error(str(exc))
-            return
+    if st.button("Importar Excel real", type="primary"):
+        result = import_master_excel(reset_before_import=False)
+        st.session_state["startup_import_debug"] = result
+        debug = result
+        if result.get("excel_exists"):
+            st.success(str(result["message"]))
+        else:
+            st.warning(str(result["message"]))
 
-        count = upsert_farmacias(df)
-        refresh_data()
-        st.success(f"{count} farmacias importadas o actualizadas usando id_farmacia como clave unica.")
+    if st.button("Reiniciar base de datos e importar Excel real"):
+        result = import_master_excel(reset_before_import=True)
+        st.session_state["startup_import_debug"] = result
+        debug = result
+        if result.get("excel_exists"):
+            st.success(str(result["message"]))
+        else:
+            st.warning(str(result["message"]))
+
+    debug_view(debug)
 
 
 def dashboard_view(df: pd.DataFrame) -> None:
@@ -185,6 +247,10 @@ def farmacia_view(df: pd.DataFrame) -> None:
 
 def main() -> None:
     init_db()
+    if "startup_import_debug" not in st.session_state:
+        st.session_state["startup_import_debug"] = import_master_excel(reset_before_import=True)
+
+    startup_debug = st.session_state["startup_import_debug"]
     df = load_data()
 
     st.title("CRM Farmacias")
@@ -198,7 +264,7 @@ def main() -> None:
     with account:
         farmacia_view(df)
     with importer:
-        import_excel_view()
+        import_excel_view(startup_debug)
 
 
 if __name__ == "__main__":

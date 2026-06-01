@@ -43,7 +43,7 @@ Columnas opcionales recomendadas:
 - `visitas_realizadas`
 - `auditorias_vendidas`
 
-El archivo `data/farmacias_master.xlsx` contiene 20 farmacias ficticias para probar la importacion.
+El archivo operativo debe llamarse `data/farmacias_master.xlsx` y debe contener una hoja llamada `Farmacias`. Este Excel no se versiona para evitar publicar datos reales.
 
 ## Estados comerciales permitidos
 

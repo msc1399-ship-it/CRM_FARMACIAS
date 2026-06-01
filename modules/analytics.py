@@ -40,10 +40,10 @@ def proximas_acciones(df: pd.DataFrame) -> pd.DataFrame:
 
     cols = ["nombre", "municipio", "provincia", "estado_comercial", "prioridad", "proxima_accion", "fecha_ultimo_contacto"]
     data = df[df["proxima_accion"].fillna("").astype(str).str.strip() != ""].copy()
-    return data.sort_values(["prioridad", "fecha_ultimo_contacto"], ascending=[True, False])[cols].head(25)
+    return data.sort_values(["prioridad", "fecha_ultimo_contacto"], ascending=[True, False])[cols]
 
 
-def ranking_prioritarias(df: pd.DataFrame, limit: int = 20) -> pd.DataFrame:
+def ranking_prioritarias(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame()
 
@@ -59,4 +59,4 @@ def ranking_prioritarias(df: pd.DataFrame, limit: int = 20) -> pd.DataFrame:
         "score_compraventa",
         "accion_recomendada",
     ]
-    return df.sort_values(["score_comercial", "score_compraventa"], ascending=False)[cols].head(limit)
+    return df.sort_values(["score_comercial", "score_compraventa"], ascending=False)[cols]
