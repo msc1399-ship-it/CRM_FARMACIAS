@@ -5,4 +5,7 @@ __pycache__/
 .streamlit/secrets.toml
 data/*.db
 data/*.db-*
-data/farmacias_master.xlsx
+data/*.sqlite
+data/*.xlsx
+data/*.xls
+!data/.gitkeep
