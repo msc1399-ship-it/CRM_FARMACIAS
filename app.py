@@ -125,18 +125,27 @@ def import_master_excel(reset_before_import: bool = False) -> dict[str, object]:
     return result
 
 
-def apply_dashboard_style(theme: str) -> None:
-    dark = theme == "Oscuro"
-    bg = "#0f172a" if dark else "#f5f7fb"
-    panel = "#111827" if dark else "#ffffff"
-    text = "#f8fafc" if dark else "#111827"
-    muted = "#94a3b8" if dark else "#64748b"
-    border = "#1f2937" if dark else "#e5e7eb"
+def apply_dashboard_style() -> None:
+    bg = "#f5f7fb"
+    panel = "#ffffff"
+    text = "#111827"
+    muted = "#64748b"
+    border = "#e5e7eb"
     st.markdown(
         f"""
         <style>
         .stApp {{ background: {bg}; color: {text}; }}
-        section[data-testid="stSidebar"] {{ background: {panel}; border-right: 1px solid {border}; }}
+        section[data-testid="stSidebar"] {{
+            background: #ffffff;
+            border-right: 1px solid {border};
+        }}
+        section[data-testid="stSidebar"] * {{
+            color: {text};
+        }}
+        .main .block-container {{
+            max-width: 1500px;
+            padding-top: 2.4rem;
+        }}
         div[data-testid="stMetric"] {{
             background: {panel};
             border: 1px solid {border};
@@ -146,6 +155,18 @@ def apply_dashboard_style(theme: str) -> None:
         }}
         div[data-testid="stMetricLabel"] p {{ color: {muted}; font-size: 0.82rem; }}
         div[data-testid="stMetricValue"] {{ color: {text}; font-weight: 750; }}
+        div[data-testid="stDataFrame"] {{
+            border: 1px solid {border};
+            border-radius: 8px;
+            overflow: hidden;
+            background: #ffffff;
+        }}
+        div[data-baseweb="input"] > div,
+        div[data-baseweb="select"] > div {{
+            background: #ffffff;
+            border-color: {border};
+            color: {text};
+        }}
         .section-title {{ font-size: 1.05rem; font-weight: 700; margin: 8px 0 10px; color: {text}; }}
         .page-subtitle {{ color: {muted}; margin-bottom: 18px; }}
         </style>
@@ -155,7 +176,7 @@ def apply_dashboard_style(theme: str) -> None:
 
 
 def plot_theme(theme: str) -> str:
-    return "plotly_dark" if theme == "Oscuro" else "plotly_white"
+    return "plotly_white"
 
 
 def normalize_funnel_state(value: object) -> str:
@@ -327,7 +348,7 @@ def dashboard_view(df: pd.DataFrame) -> None:
         st.info("Importa el Excel maestro para cargar el CRM.")
         return
 
-    theme = st.session_state.get("theme", "Claro")
+    theme = "Claro"
     data = prepare_dashboard_data(df)
     render_kpis(data)
 
@@ -512,14 +533,13 @@ def main() -> None:
 
     with st.sidebar:
         st.title("CRM Farmacias")
-        st.session_state["theme"] = st.radio("Tema", ["Claro", "Oscuro"], horizontal=True)
         page = st.radio(
             "Navegación",
             ["Dashboard", "Farmacias", "Pipeline Comercial", "Auditorías", "Clientes", "Compraventa", "Analítica", "Configuración"],
         )
         st.caption(f"SQLite: {DB_PATH}")
 
-    apply_dashboard_style(st.session_state["theme"])
+    apply_dashboard_style()
     st.title("CRM Farmacias")
     st.caption("CRM interno para embudo comercial, scoring, compraventa y analítica de farmacias españolas.")
 
