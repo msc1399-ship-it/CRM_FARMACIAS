@@ -9,3 +9,4 @@ data/*.sqlite
 data/*.xlsx
 data/*.xls
 !data/.gitkeep
+!data/farmacias_master.xlsx
