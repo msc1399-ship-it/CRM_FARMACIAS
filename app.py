@@ -58,23 +58,7 @@ def import_master_excel(reset_before_import: bool = False) -> dict[str, object]:
     return debug
 
 
-def debug_view(debug: dict[str, object]) -> None:
-    st.subheader("Depuración de importación")
-    st.write(
-        {
-            "ruta_excel_usado": debug.get("excel_path", str(MASTER_XLSX.resolve())),
-            "archivo_existe": debug.get("excel_exists", MASTER_XLSX.exists()),
-            "hoja_leida": debug.get("sheet_name", MASTER_SHEET_NAME),
-            "columnas_detectadas": debug.get("detected_columns", []),
-            "filas_leidas_excel": debug.get("excel_rows", 0),
-            "total_farmacias_sqlite": debug.get("sqlite_total", count_farmacias()),
-        }
-    )
-    if debug.get("message"):
-        st.info(str(debug["message"]))
-
-
-def import_excel_view(debug: dict[str, object]) -> None:
+def import_excel_view() -> None:
     st.subheader("Importar Excel maestro")
     st.caption(f"Persistencia SQLite: {DB_PATH}")
     st.caption(f"Archivo principal: {MASTER_XLSX}")
@@ -93,7 +77,6 @@ def import_excel_view(debug: dict[str, object]) -> None:
     if st.button("Importar Excel real", type="primary"):
         result = import_master_excel(reset_before_import=False)
         st.session_state["startup_import_debug"] = result
-        debug = result
         if result.get("excel_exists"):
             st.success(str(result["message"]))
         else:
@@ -102,13 +85,10 @@ def import_excel_view(debug: dict[str, object]) -> None:
     if st.button("Reiniciar base de datos e importar Excel real"):
         result = import_master_excel(reset_before_import=True)
         st.session_state["startup_import_debug"] = result
-        debug = result
         if result.get("excel_exists"):
             st.success(str(result["message"]))
         else:
             st.warning(str(result["message"]))
-
-    debug_view(debug)
 
 
 def dashboard_view(df: pd.DataFrame) -> None:
@@ -250,7 +230,6 @@ def main() -> None:
     if "startup_import_debug" not in st.session_state:
         st.session_state["startup_import_debug"] = import_master_excel(reset_before_import=True)
 
-    startup_debug = st.session_state["startup_import_debug"]
     df = load_data()
 
     st.title("CRM Farmacias")
@@ -264,7 +243,7 @@ def main() -> None:
     with account:
         farmacia_view(df)
     with importer:
-        import_excel_view(startup_debug)
+        import_excel_view()
 
 
 if __name__ == "__main__":
