@@ -305,7 +305,20 @@ def evolution_chart(data: pd.DataFrame, period: str, theme: str) -> go.Figure:
         )
         .reset_index()
     )
-    fig = px.line(grouped, x="periodo", y=["contactos", "reuniones", "auditorias_vendidas", "clientes_recurrentes"], markers=True)
+    metric_columns = ["contactos", "reuniones", "auditorias_vendidas", "clientes_recurrentes"]
+    if grouped.empty:
+        grouped = pd.DataFrame([{"periodo": max_date, **{column: 0 for column in metric_columns}}])
+
+    for column in metric_columns:
+        grouped[column] = pd.to_numeric(grouped[column], errors="coerce").fillna(0).astype(int)
+
+    long_grouped = grouped.melt(
+        id_vars="periodo",
+        value_vars=metric_columns,
+        var_name="métrica",
+        value_name="actividad",
+    )
+    fig = px.line(long_grouped, x="periodo", y="actividad", color="métrica", markers=True)
     fig.update_layout(template=plot_theme(theme), height=360, margin=dict(l=10, r=10, t=20, b=10), legend_orientation="h")
     return fig
 
