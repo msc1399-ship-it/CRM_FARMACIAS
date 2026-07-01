@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CRM Farmacias Local</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div id="app-root">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">CRM Farmacias</div>
+      <div class="sub">Servidor local privado</div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboard">Dashboard</button>
+      <button class="nav-item" data-page="farmacias">Farmacias</button>
+      <button class="nav-item" data-page="pipeline">Embudo</button>
+      <button class="nav-item" data-page="clientes">Clientes activos</button>
+      <button class="nav-item" data-page="expedientes">Expedientes</button>
+    </nav>
+  </aside>
+  <main class="main">
+    <header class="page-header">
+      <div>
+        <div class="page-title" id="page-title">Dashboard</div>
+        <div class="page-sub" id="page-sub">Cargando datos desde SQLite...</div>
+      </div>
+      <button class="btn btn-primary" id="refresh-btn">Actualizar</button>
+    </header>
+    <section class="page-content" id="view"></section>
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

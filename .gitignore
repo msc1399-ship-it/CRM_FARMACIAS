@@ -10,3 +10,5 @@ data/*.xlsx
 data/*.xls
 !data/.gitkeep
 !data/farmacias_master.xlsx
+local_data/
+.env

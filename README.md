@@ -56,3 +56,38 @@ El archivo operativo debe llamarse `data/farmacias_master.xlsx` y debe contener 
 - Auditoría vendida
 - Cliente recurrente
 - Descartada
+
+## Backend local FastAPI
+
+Nueva arquitectura local desacoplada para trabajar desde este PC y acceder desde otro equipo por Tailscale:
+
+```text
+local_crm/
+├─ main.py              # API FastAPI + servidor HTML
+├─ db.py                # SQLite y esquema
+├─ importer.py          # Importacion desde FARMACIAS_CYL.xlsx
+├─ analytics_bridge.py  # Puente hacia API/comando analitico local
+├─ config.py            # Configuracion .env
+├─ templates/crm.html   # Plantilla dinamica basada en el HTML visual
+└─ static/
+   ├─ styles.css
+   └─ app.js
+scripts/init_local_crm.py
+run_local_crm.ps1
+.env.example
+requirements_local.txt
+```
+
+Inicializacion:
+
+```powershell
+pip install -r requirements_local.txt
+.\run_local_crm.ps1
+```
+
+El servidor escucha en `0.0.0.0:8000`, por lo que podras abrirlo desde el portatil usando la IP de Tailscale del PC servidor.
+
+El CRM no modifica el software analitico existente. Para integrarlo, configura en `.env` una de estas opciones:
+
+- `ANALYTICS_API_URL`: endpoint local que recibe la ruta del expediente.
+- `ANALYTICS_COMMAND`: comando local al que se le pasa la ruta del expediente como argumento final.
